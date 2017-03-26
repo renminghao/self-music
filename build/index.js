@@ -102,6 +102,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			};
 
 			_this.getRemoteData = _this.getRemoteData.bind(_this);
+			_this.playByContent = _this.playByContent.bind(_this);
 			return _this;
 		}
 
@@ -127,6 +128,13 @@ return /******/ (function(modules) { // webpackBootstrap
 				});
 			}
 		}, {
+			key: 'playByContent',
+			value: function playByContent(content) {
+				this.setState({
+					info: content
+				});
+			}
+		}, {
 			key: 'render',
 			value: function render() {
 				var _state = this.state,
@@ -136,7 +144,7 @@ return /******/ (function(modules) { // webpackBootstrap
 				return _react2.default.createElement(
 					'div',
 					{ className: 'container ' + (loading ? '' : 'fullPage') },
-					loading ? _react2.default.createElement(_reactLoading2.default, { type: 'cubes', color: '#dd2727' }) : _react2.default.createElement(_Player2.default, { info: info })
+					loading ? _react2.default.createElement(_reactLoading2.default, { type: 'cubes', color: '#dd2727' }) : _react2.default.createElement(_Player2.default, { info: info, next: this.getRemoteData, playByContent: this.playByContent })
 				);
 			}
 		}]);
@@ -4517,7 +4525,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 				return {
 					playerBg: {
-						backgroundImage: 'url(' + info.picture + ')'
+						backgroundImage: 'url(' + (info.picture || info.image) + ')'
 					}
 				};
 			}
@@ -4527,11 +4535,21 @@ return /******/ (function(modules) { // webpackBootstrap
 				var info = this.props.info;
 				var style = this.style;
 
+
 				return _react2.default.createElement(
 					'div',
 					{ className: 'containerPlayer' },
-					_react2.default.createElement('div', { className: 'player', style: style().playerBg }),
-					_react2.default.createElement(_Video2.default, { url: info.url, picture: info.picture })
+					_react2.default.createElement('div', {
+						className: 'player',
+						style: style().playerBg }),
+					_react2.default.createElement(_Video2.default, {
+						url: info.url,
+						picture: info.picture || info.image,
+						title: info.title,
+						summary: info.summary,
+						next: this.props.next,
+						playByContent: this.props.playByContent
+					})
 				);
 			}
 		}]);
@@ -4545,7 +4563,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
@@ -4565,6 +4583,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+	var searchFuc = void 0;
+
 	var Video = function (_React$Component) {
 		_inherits(Video, _React$Component);
 
@@ -4573,22 +4593,193 @@ return /******/ (function(modules) { // webpackBootstrap
 
 			var _this = _possibleConstructorReturn(this, (Video.__proto__ || Object.getPrototypeOf(Video)).call(this, props));
 
-			_this.state = {};
+			_this.state = {
+				play: true
+			};
+			"pause_next_like_play_search".split('_').map(function (item) {
+				return _this[item] = _this[item].bind(_this);
+			});
 			return _this;
 		}
 
 		_createClass(Video, [{
-			key: "render",
+			key: 'pause',
+			value: function pause() {
+				var _this2 = this;
+
+				var play = this.state.play;
+
+				this.setState({
+					play: !play
+				}, function () {
+					_this2.refs.video.pause();
+				});
+			}
+		}, {
+			key: 'play',
+			value: function play() {
+				var _this3 = this;
+
+				var play = this.state.play;
+
+				this.setState({
+					play: !play
+				}, function () {
+					_this3.refs.video.play();
+				});
+			}
+		}, {
+			key: 'next',
+			value: function next() {
+				this.props.next();
+			}
+		}, {
+			key: 'like',
+			value: function like() {}
+		}, {
+			key: 'search',
+			value: function search() {
+				var _this4 = this;
+
+				searchFuc && clearTimeout(searchFuc);
+
+				searchFuc = setTimeout(function () {
+					_this4.getSearchDate();
+				}, 300);
+			}
+		}, {
+			key: 'getSearchDate',
+			value: function getSearchDate() {
+				var _this5 = this;
+
+				var searchContent = this.state.searchContent;
+
+				fetch('https://douban.fm/j/v2/query/song?q=' + searchContent).then(function (json) {
+					return json.json();
+				}).then(function (data) {
+					_this5.setState({
+						searchResult: data.items.filter(function (item) {
+							return item.url;
+						})
+					});
+				}).catch(function (e) {
+					console.error(e);
+				});
+			}
+		}, {
+			key: 'selectMusic',
+			value: function selectMusic(info) {
+				var _this6 = this;
+
+				this.setState({
+					searchResult: []
+				}, function () {
+					_this6.props.playByContent(info);
+				});
+			}
+		}, {
+			key: 'render',
 			value: function render() {
+				var _this7 = this;
+
 				var _props = this.props,
 				    url = _props.url,
-				    picture = _props.picture;
+				    picture = _props.picture,
+				    title = _props.title,
+				    summary = _props.summary;
+				var _state = this.state,
+				    play = _state.play,
+				    searchResult = _state.searchResult,
+				    searchContent = _state.searchContent;
 
 				return _react2.default.createElement(
-					"div",
-					{ className: "video" },
-					_react2.default.createElement("div", { className: "bg", style: { backgroundImage: "url(" + picture + ")" } }),
-					_react2.default.createElement("video", { src: url, controls: true, className: "reactVideo", autoPlay: true })
+					'div',
+					{ className: 'video' },
+					_react2.default.createElement(
+						'div',
+						{ className: 'contral' },
+						_react2.default.createElement(
+							'div',
+							{ className: 'word' },
+							_react2.default.createElement(
+								'div',
+								{ className: 'search' },
+								_react2.default.createElement('input', {
+									placeholder: '\u641C\u641C\u641C',
+									onChange: function onChange(val) {
+										return _this7.setState({ searchContent: val.target.value }, function () {
+											_this7.search();
+										});
+									}
+								}),
+								_react2.default.createElement(
+									'ul',
+									null,
+									searchResult ? searchResult.map(function (item, key) {
+										return _react2.default.createElement(
+											'li',
+											{ key: key, onClick: _this7.selectMusic.bind(_this7, item) },
+											item.title,
+											'-',
+											item.artist_name
+										);
+									}) : ''
+								)
+							)
+						),
+						_react2.default.createElement(
+							'div',
+							{ className: 'interface' },
+							_react2.default.createElement('div', { className: 'bg', style: { backgroundImage: 'url(' + picture + ')' } }),
+							_react2.default.createElement(
+								'div',
+								{ className: 'title' },
+								_react2.default.createElement(
+									'span',
+									null,
+									summary || title
+								)
+							)
+						)
+					),
+					_react2.default.createElement(
+						'div',
+						{ className: 'operation' },
+						play ? _react2.default.createElement(
+							'i',
+							{
+								onClick: this.pause
+							},
+							'\uE60F'
+						) : _react2.default.createElement(
+							'i',
+							{
+								onClick: this.play
+							},
+							'\uE646'
+						),
+						_react2.default.createElement(
+							'i',
+							{
+								onClick: this.next
+							},
+							'\uE647'
+						),
+						_react2.default.createElement(
+							'i',
+							{
+								onClick: this.like
+							},
+							'\uE601'
+						)
+					),
+					_react2.default.createElement('video', {
+						ref: 'video',
+						src: url,
+						controls: true,
+						className: 'reactVideo',
+						autoPlay: true
+					})
 				);
 			}
 		}]);
